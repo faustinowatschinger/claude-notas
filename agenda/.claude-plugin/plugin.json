@@ -1,6 +1,6 @@
 {
   "name": "agenda",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Panel /agenda: calendario del mes y las casillas del día (un AAAA-MM-DD.md por día), tildables con un clic.",
   "types": "./types/index.d.ts",
   "userConfig": {

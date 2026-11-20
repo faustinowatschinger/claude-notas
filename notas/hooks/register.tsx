@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Contenido, Edicion, Rutas, Vinculos, Vista } from '../types'
+import type { Contenido, Edicion, EstadoIndice, Rutas, Vinculos, Vista } from '../types'
 import { aLaPapelera, buscarTexto, carpetaUsuario, crearCarpeta, escribirPortapapeles, esAbsoluta, leerPortapapeles, listarMd, normalizar, plataforma } from './sistema'
 
 const PANE = 'notas'
@@ -17,6 +17,10 @@ const raiz = atom({ plugin: 'notas', key: 'raiz' } as const, '', { shape: 'raiz-
 const contenidoA = atom({ plugin: 'notas', key: 'contenido' } as const, { q: '', hits: [] } as Contenido, { shape: 'contenido-1' })
 const vinculosA = atom({ plugin: 'notas', key: 'vinculos' } as const, { archivo: '', salientes: [], entrantes: [] } as Vinculos, { shape: 'vinculos-1' })
 const indiceA = atom({ plugin: 'notas', key: 'indice' } as const, [] as string[], { shape: 'indice-2' })
+// Si el índice ya se armó (aunque la carpeta no tenga .md) o si falló.
+const estadoIndiceA = atom({ plugin: 'notas', key: 'estadoIndice' } as const, { fase: 'indexando' } as EstadoIndice, { shape: 'estado-indice-1' })
+
+type Opciones = { carpetaNotas?: unknown; carpetaPlantillas?: unknown }
 
 // Corta un .md en secciones: cada título abre una, y un tramo sin títulos se corta cada 25 líneas.
 export function secciones(texto: string) {
@@ -164,8 +168,57 @@ export const nombreNota = (ms: number, texto: string) => {
 
 async function indexar($: EngineInterface) {
   const { so } = await read($, rutasA)
-  const lista = await listarMd($, so, await read($, raiz), PODAR)
-  if (lista.length > 0) await update($, indiceA, () => lista)
+  const carpeta = await read($, raiz)
+  const lista = await listarMd($, so, carpeta, PODAR)
+  if (lista === null) {
+    // Si ya había un índice, se queda el que estaba.
+    await update($, estadoIndiceA, x => (x.fase === 'listo' ? x : { fase: 'error', detalle: `No pude listar los archivos de ${carpeta || 'la carpeta del chat'}.` }))
+    return
+  }
+  await update($, indiceA, () => lista)
+  await update($, estadoIndiceA, () => ({ fase: 'listo' }))
+}
+
+// La carpeta del chat. La app de escritorio arranca cada chat nuevo en una carpeta temporal
+// y después lo pasa a la del proyecto, así que no alcanza con la de session.start.
+async function carpetaSesion($: EngineInterface, respaldo: string) {
+  for (const pedir of [() => $.session.root(), () => $.session.cwd()]) {
+    try {
+      const c = await pedir()
+      if (c) return normalizar(c)
+    } catch {
+      // sigue con la siguiente
+    }
+  }
+  return normalizar(respaldo)
+}
+
+// Arma las rutas a partir de la carpeta del chat: las opciones relativas cuelgan de ahí.
+async function configurar($: EngineInterface, cwd: string, opciones: Opciones) {
+  await update($, raiz, () => cwd)
+  const so = await plataforma($)
+  const home = await carpetaUsuario($)
+  const ruta = (v: unknown, def: string) => { const c = normalizar(String(v ?? def)); return esAbsoluta(c) ? c : `${cwd}/${c}` }
+  await update($, rutasA, () => ({
+    so,
+    home,
+    notas: ruta(opciones.carpetaNotas, 'notas'),
+    versiones: home ? `${home}/.claude/notas-versiones` : `${cwd}/.notas-versiones`,
+    papelera: '',
+    plantillas: ruta(opciones.carpetaPlantillas, 'plantillas'),
+  }))
+}
+
+// Si el chat cambió de carpeta, rearma las rutas y vuelve a indexar. Devuelve si cambió.
+async function seguirCarpeta($: EngineInterface, opciones: Opciones) {
+  const actual = await read($, raiz)
+  const cwd = await carpetaSesion($, actual)
+  if (!cwd || cwd === actual) return false
+  await configurar($, cwd, opciones)
+  await update($, indiceA, () => [])
+  await update($, estadoIndiceA, () => ({ fase: 'indexando' }))
+  await update($, vista, v => ({ ...v, archivo: undefined, editando: false, abiertas: [], creandoEn: undefined, confirmar: undefined }))
+  return true
 }
 
 // Busca en los .md con el comando que corresponde al sistema.
@@ -332,27 +385,18 @@ async function alternarCarpeta($: EngineInterface, c: string) {
 
 export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
-    const cwd = normalizar(e.cwd)
-    await update($, raiz, () => cwd)
-    const so = await plataforma($)
-    const home = await carpetaUsuario($)
-    const ruta = (v: unknown, def: string) => { const c = normalizar(String(v ?? def)); return esAbsoluta(c) ? c : `${cwd}/${c}` }
-    await update($, rutasA, () => ({
-      so,
-      home,
-      notas: ruta(options.carpetaNotas, 'notas'),
-      versiones: home ? `${home}/.claude/notas-versiones` : `${cwd}/.notas-versiones`,
-      papelera: '',
-      plantillas: ruta(options.carpetaPlantillas, 'plantillas'),
-    }))
+    await configurar($, await carpetaSesion($, e.cwd), options)
     await $.command.register({ name: 'notas', description: 'Abrir el panel de notas y archivos .md del proyecto' })
     void indexar($)
     $.clock.every(60000, () => indexar($))
+    // Revisa seguido si el chat pasó a otra carpeta (pasa al abrir un chat nuevo).
+    $.clock.every(3000, async () => { if (await seguirCarpeta($, options)) await indexar($) })
     void $.ui.open({ id: PANE, title: 'Notas' })
     return next(e)
   })
 
   on('command.run', { command: 'notas' }, async $ => {
+    await seguirCarpeta($, options)
     await indexar($)
     await $.ui.open({ id: PANE, title: 'Notas' })
     return { text: 'Panel de notas abierto.' }
@@ -506,6 +550,7 @@ export const register: Register = (on, options) => {
 
     // Lista: nota rápida, notas recientes, buscador y árbol
     const indice = await read($, indiceA)
+    const estado = await read($, estadoIndiceA)
     const NOTAS = (await read($, rutasA)).notas
     const recientes = NOTAS && (await $.fs.exists(NOTAS)) ? (await $.fs.list(NOTAS)).filter(f => f.kind === 'file' && f.name.endsWith('.md')).sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 5) : []
     const fila = (rel: string, nivel: number, etiqueta?: string) => (
@@ -624,7 +669,13 @@ export const register: Register = (on, options) => {
                   </Box>
                 )}
             </Box>
-          ) : indice.length === 0 ? <Text dimColor>Indexando…</Text> : (
+          ) : indice.length === 0 && estado.fase === 'indexando' ? <Text dimColor>Indexando…</Text>
+            : indice.length === 0 && estado.fase === 'error' ? (
+              <Box flexDirection="column" gap="xs">
+                <Text dimColor>{estado.detalle}</Text>
+                <Button key="reindexar" onPress={() => indexar($)}><Text>Reintentar</Text></Button>
+              </Box>
+            ) : (
             <Box flexDirection="column">
               <Box flexDirection="row" alignItems="center" gap="xs" paddingBottom="xs">
                 <Box flexGrow={1}><Text dimColor size="caption" weight="semibold">EXPLORADOR</Text></Box>
@@ -632,6 +683,7 @@ export const register: Register = (on, options) => {
                 <Button key="nueva-carpeta-raiz" plain onPress={() => nuevoEn('', 'carpeta')}><Text color="claude">＋📁</Text></Button>
               </Box>
               {campoNuevo('', 0)}
+              {indice.length === 0 && !v.creandoEn && <Text dimColor size="caption">Todavía no hay archivos .md en esta carpeta.</Text>}
               {arbol('', 0)}
             </Box>
           )}

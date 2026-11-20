@@ -10,6 +10,7 @@ const PANE = {
 } as const
 
 const sistemaSimulado = { os: undefined as string | undefined }
+const fallaFind = { activo: false }
 const copiados: string[] = []
 const mkdirs: string[] = []
 
@@ -50,6 +51,9 @@ function montarFs(on: any, fs: Map<string, string>, movidos: string[][]) {
     if (e.argv[0].endsWith('pbcopy')) { copiados.push(e.init?.stdin); return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } } }
     if (e.argv[0].endsWith('pbpaste')) return { value: { exitCode: 0, stdout: 'uno\ndos', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     if (e.argv[0] === 'mv') { movidos.push(e.argv); fs.delete(e.argv[2]); return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } } }
+    if (fallaFind.activo && e.argv[0] === 'find') throw new Error('timeout')
+    // find: solo la carpeta del proyecto tiene archivos; cualquier otra está vacía
+    if (e.init?.cwd && e.init.cwd !== R) return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     const md = [...[...fs.keys()].filter(k => k.startsWith(R + '/')).map(k => './' + k.slice(R.length + 1)), ...mkdirs.filter(d => d.startsWith(R + '/') && ![...fs.keys()].some(k => k.startsWith(d + '/'))).map(d => './' + d.slice(R.length + 1))].join('\n')
     return { value: { exitCode: 0, stdout: md, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
@@ -389,5 +393,41 @@ test('en Windows usa PowerShell para listar, buscar, carpetas, portapapeles y Pa
   await ui.press({ key: 'borrar' })
   await ui.press({ key: 'si-borrar' })
   expect(scripts.some(sc => sc.includes('SendToRecycleBin') && sc.includes("'C:/proy/a.md'"))).toBe(true)
+  await ui.unmount()
+})
+
+test('chat nuevo: arranca en una carpeta temporal y después pasa al proyecto', async ($, on) => {
+  const fs = new Map<string, string>([[`${R}/ventas/guion.md`, '# Guion']])
+  montarFs(on, fs, [])
+  // La app de escritorio precalienta el chat en una carpeta temporal y después lo pasa al proyecto.
+  let carpeta = '/tmp/precalentado'
+  on('session.root', () => ({ value: carpeta }))
+  await $.session.start({ cwd: '/tmp/precalentado', surface: 'desktop', isInteractive: true })
+  await $.command.run({ command: 'notas', args: '' })
+  let ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  // una carpeta sin .md muestra el explorador vacío, no «Indexando…» para siempre
+  expect(await ui.find({ type: 'Text', text: 'Indexando…' })).toBeFalsy()
+  expect(await ui.find({ type: 'Text', text: 'Todavía no hay archivos .md en esta carpeta.' })).toBeTruthy()
+  await ui.unmount()
+
+  carpeta = R
+  await $.command.run({ command: 'notas', args: '' })
+  ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'dir-ventas' })
+  expect(await ui.find({ type: 'Text', text: 'guion' })).toBeTruthy()
+  await ui.unmount()
+})
+
+test('si no puede listar, avisa y deja reintentar', async ($, on) => {
+  const fs = new Map<string, string>([[`${R}/a.md`, '# A']])
+  montarFs(on, fs, [])
+  fallaFind.activo = true
+  await $.session.start({ cwd: R, surface: 'desktop', isInteractive: true })
+  await $.command.run({ command: 'notas', args: '' })
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: 'No pude listar los archivos de /proy.' })).toBeTruthy()
+  fallaFind.activo = false
+  await ui.press({ key: 'reindexar' })
+  expect(await ui.find({ type: 'Button', key: 'f-a.md' })).toBeTruthy()
   await ui.unmount()
 })

@@ -58,24 +58,24 @@
 <section class="page">
   <div class="bar"><span><b>FAUS/OPERADOR</b> · <span class="rec">●</span> REC</span><span>RECURSO GRATIS · 2026</span></div>
   <div class="tag">MODS PARA CLAUDE CODE</div>
-  <h1>Tus notas<br>adentro de<br><span class="a">Claude.</span></h1>
-  <p class="lead">Dejé Obsidian y armé lo que usaba adentro de Claude Code: un explorador de archivos, un editor, enlaces entre notas y la agenda del día. Esta guía te deja instalarlo en 3 comandos.</p>
+  <h1>Tus apps<br>adentro de<br><span class="a">Claude.</span></h1>
+  <p class="lead">Mis notas y mis archivos estaban en Obsidian, y mi lista de tareas en Notion. Un quilombo. Le pedí a Claude un mod para cada una y los armó él: no escribí ni una línea de código. Acá tenés los dos, y cómo instalarlos en 3 comandos.</p>
   <div class="cover-bottom">
     <div class="grid2">
-      <div class="card"><h3><span class="amber">/notas</span></h3><p>Explorador de tus <code>.md</code> estilo VS Code, editor en el lugar, <code>[[enlaces]]</code>, búsqueda y nota rápida.</p></div>
-      <div class="card"><h3><span class="amber">/agenda</span></h3><p>Calendario del mes y las casillas del día, que se tildan con un clic y quedan guardadas en el archivo.</p></div>
+      <div class="card"><h3><span class="amber">/notas</span></h3><p>Todas tus carpetas y archivos <code>.md</code>, un buscador, notas rápidas y un editor en el panel. Claude trabaja sobre los mismos archivos.</p></div>
+      <div class="card"><h3><span class="amber">/agenda</span></h3><p>La lista de tareas del día, con casillas que se tildan con un clic. Se la pedís a Claude y la tildás vos.</p></div>
     </div>
     <p class="mono dim" style="margin-top:6mm">github.com/faustinowatschinger/claude-notas</p>
   </div>
-  <div class="foot"><span>claude-notas</span><span>01 / 06</span></div>
+  <div class="foot"><span>claude-notas</span><span>01 / 07</span></div>
 </section>
 
 <!-- 2. Qué es -->
 <section class="page">
   <div class="bar"><span><b>FAUS/OPERADOR</b> · <span class="rec">●</span> REC</span><span>QUÉ ES</span></div>
   <h2><span class="n">01</span>Qué es un mod</h2>
-  <p class="lead" style="margin-bottom:6mm">Claude Code deja sumarle <b>mods</b>: código que le agrega paneles, comandos y comportamientos propios. Se instalan como plugins y quedan en todos tus chats.</p>
-  <p>Estos dos dibujan un panel al costado del chat. Trabajan sobre los archivos <code>.md</code> de la carpeta donde abrís Claude: no hay base de datos aparte, no hay sincronización. Lo que tildás o escribís queda en el archivo.</p>
+  <p class="lead" style="margin-bottom:6mm">Claude Code deja sumarle <b>mods</b>: apps propias que viven adentro de Claude, en un panel al costado del chat. Se instalan como plugins y quedan en todos tus chats.</p>
+  <p>Estos dos trabajan sobre los archivos <code>.md</code> de la carpeta donde abrís Claude. No hay base de datos aparte ni sincronización: lo que escribís o tildás queda en el archivo, y Claude lee y edita esos mismos archivos. <b>Vos y Claude trabajan sobre lo mismo.</b></p>
   <h3 style="margin-top:7mm">Lo que trae <span class="amber">/notas</span></h3>
   <ul class="big-list">
     <li><b>Explorador</b> como el de VS Code: en cada carpeta, ＋📄 crea un archivo y ＋📁 una carpeta.</li>
@@ -87,10 +87,11 @@
   </ul>
   <h3 style="margin-top:5mm">Lo que trae <span class="amber">/agenda</span></h3>
   <ul class="big-list">
+    <li>La lista del día, que le pedís a Claude que te arme en un archivo por día.</li>
     <li>Un mes arriba: los días con archivo en color. Tocás un día y ves su agenda.</li>
     <li>Las casillas <code>- [ ]</code> se tildan con un clic. Si empiezan con una hora en negrita, destaca el bloque que toca ahora.</li>
   </ul>
-  <div class="foot"><span>claude-notas</span><span>02 / 06</span></div>
+  <div class="foot"><span>claude-notas</span><span>02 / 07</span></div>
 </section>
 
 <!-- 3. Instalar -->
@@ -99,7 +100,7 @@
   <h2><span class="n">02</span>Lo que necesitás</h2>
   <div class="grid2" style="margin-bottom:9mm">
     <div class="card"><h3>Mac, Windows o Linux</h3><p>Cada sistema usa lo suyo para copiar, pegar y la Papelera. En Linux: <code>wl-clipboard</code> o <code>xclip</code>.</p></div>
-    <div class="card"><h3>Claude Code de escritorio</h3><p>La pestaña <b>Code</b> de la app de Claude, versión 2.1.328 o más nueva.</p></div>
+    <div class="card"><h3>Claude Code de escritorio</h3><p>La pestaña <b>Code</b> de la app de Claude, versión 2.1.328 o más nueva. Necesita un plan pago: Claude Code no viene en el gratis. El Pro, de USD 20 por mes, alcanza.</p></div>
   </div>
   <h2><span class="n">03</span>Instalalo en 3 comandos</h2>
   <p class="dim" style="margin-bottom:5mm">Escribilos en el chat de Claude Code, uno por uno.</p>
@@ -108,7 +109,7 @@
   <div class="step"><div class="num">3</div><div><p><b>Instalá la agenda</b></p><div class="cmd"><span class="p">›</span>/plugin install agenda@claude-notas</div></div></div>
   <div class="step"><div class="num">✓</div><div><p><b>Abrí un chat nuevo.</b> Los paneles se abren solos. Si no los ves, escribí <code>/notas</code> o <code>/agenda</code>.</p></div></div>
   <div class="note"><p style="margin:0"><span class="amber mono">TIP</span>&nbsp; Desde la terminal es lo mismo con <code>claude plugin marketplace add …</code> y <code>claude plugin install …</code>.</p></div>
-  <div class="foot"><span>claude-notas</span><span>03 / 06</span></div>
+  <div class="foot"><span>claude-notas</span><span>03 / 07</span></div>
 </section>
 
 <!-- 4. Carpetas -->
@@ -128,13 +129,14 @@
   <h3 style="margin-top:8mm">Plantillas</h3>
   <p>Cualquier <code>.md</code> de la carpeta de plantillas sirve. Al crear un archivo se reemplazan <code>{{fecha}}</code>, <code>{{hora}}</code> y <code>{{titulo}}</code>.</p>
   <h3 style="margin-top:6mm">Un día de la agenda</h3>
+  <p>Pedíselo a Claude: <span class="amber">«Armame la agenda de hoy en <code>dias/</code>, un bloque por línea, con la hora en negrita y casillas.»</span> Queda así:</p>
   <div class="cmd" style="white-space:pre; font-size:10pt; line-height:1.6"># Día — 2026-11-20
 
 - [ ] **10:00–12:30** Llamadas
 - [ ] **14:00–16:00** Grabar el reel
   - [ ] Guion
 - [ ] **18:00** Entrenar</div>
-  <div class="foot"><span>claude-notas</span><span>04 / 06</span></div>
+  <div class="foot"><span>claude-notas</span><span>04 / 07</span></div>
 </section>
 
 <!-- 5. Uso -->
@@ -156,7 +158,7 @@
     <tr><td>Agenda</td><td class="k">‹ › · Hoy</td><td>Cambia de mes · vuelve al día de hoy</td></tr>
   </table>
   <div class="note"><p style="margin:0"><span class="amber mono">SE GUARDA SOLO</span>&nbsp; No hay botón de guardar en el editor: cada cambio se escribe en el archivo.</p></div>
-  <div class="foot"><span>claude-notas</span><span>05 / 06</span></div>
+  <div class="foot"><span>claude-notas</span><span>05 / 07</span></div>
 </section>
 
 <!-- 6. Cuidados y límites -->
@@ -181,8 +183,20 @@
   <div class="cmd"><span class="p">›</span>/plugin update notas@claude-notas</div>
   <div class="cmd"><span class="p">›</span>/plugin update agenda@claude-notas</div>
   <p class="dim">Y abrí un chat nuevo: los chats que ya estaban abiertos siguen con la versión anterior. Código abierto, licencia MIT.</p>
+  <div class="foot"><span>claude-notas</span><span>06 / 07</span></div>
+</section>
+
+<!-- 7. Armá el tuyo -->
+<section class="page">
+  <div class="bar"><span><b>FAUS/OPERADOR</b> · <span class="rec">●</span> REC</span><span>ARMÁ EL TUYO</span></div>
+  <h2><span class="n">09</span>Armá el tuyo</h2>
+  <p class="lead" style="margin-bottom:7mm">Estos dos los escribió Claude. La app que uses todos los días se le puede pedir igual: Claude Code ya sabe armar mods.</p>
+  <div class="step"><div class="num">1</div><div><p><b>Contale qué querés ver al costado del chat.</b></p><div class="cmd"><span class="p">›</span>Armame un mod con un panel que muestre mis pendientes y me deje tildarlos</div></div></div>
+  <div class="step"><div class="num">2</div><div><p><b>Dejá que lo active.</b> Claude lo escribe, lo prueba y la app te pregunta si querés activar los mods de esa sesión. Con un sí, el panel aparece al terminar la respuesta.</p></div></div>
+  <div class="step"><div class="num">3</div><div><p><b>Pedile los cambios hablando:</b> «el botón más arriba», «que se guarde solo», «que se vea bien en un panel angosto». Cada cambio se recarga al terminar la respuesta.</p></div></div>
+  <div class="note"><p style="margin:0"><span class="amber mono">OJO</span>&nbsp; Los mods no corren aislados: leen y escriben archivos y corren comandos con tus permisos. Instalá los que puedas leer. El código de estos dos está abierto en el repo.</p></div>
   <div class="cover-bottom" style="bottom:22mm"><p class="mono amber" style="font-size:12pt">github.com/faustinowatschinger/claude-notas</p></div>
-  <div class="foot"><span>claude-notas · hecho con Claude Code</span><span>06 / 06</span></div>
+  <div class="foot"><span>claude-notas · hecho con Claude Code</span><span>07 / 07</span></div>
 </section>
 
 </body>

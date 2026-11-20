@@ -105,3 +105,20 @@ test('la carpeta de días acepta rutas de Windows', async ($, on) => {
   // en esta Mac el simulador antepone la carpeta actual a «C:/…»: se compara el final
   expect(leidas[0].endsWith('C:/Users/ana/proyecto/dias/2026-11-20.md')).toBe(true)
 })
+
+test('chat nuevo: la carpeta de días sigue al chat cuando pasa al proyecto', async ($, on) => {
+  const leidas: string[] = []
+  let carpeta = '/tmp/precalentado'
+  on('command.register', () => ({ value: { command: 'agenda' } }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.root', () => ({ value: carpeta }))
+  on('clock.now', () => ({ value: Date.UTC(2026, 10, 20, 12) }))
+  on('clock.every', () => ({ value: undefined }))
+  on('fs.stat', (_, e) => { leidas.push(e.path); return { value: { kind: 'file', size: 1, mtimeMs: 1, isLink: false } } })
+  on('fs.read', () => ({ value: '- [ ] algo' }))
+  await $.session.start({ cwd: '/tmp/precalentado', surface: 'desktop', isInteractive: true })
+  carpeta = '/proy'
+  await $.command.run({ command: 'agenda', args: '' })
+  expect(leidas.at(-1)).toBe('/proy/dias/2026-11-20.md')
+})

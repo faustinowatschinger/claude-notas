@@ -51,13 +51,14 @@ async function powershell($: EngineInterface, script: string, stdin?: string) {
 // Nota: con `env` se pasa la ruta completa del comando, por si el entorno nuevo no trae PATH.
 
 // Los .md del proyecto, y las carpetas vacías con «/» al final, salteando las carpetas pesadas.
-export async function listarMd($: EngineInterface, so: SO, raiz: string, podar: string[]): Promise<string[]> {
+// null si no se pudo listar (el comando no arrancó o tardó más de la cuenta).
+export async function listarMd($: EngineInterface, so: SO, raiz: string, podar: string[]): Promise<string[] | null> {
   let salida = ''
   if (so === 'windows') {
     const lista = podar.map(ps).join(',')
     const script = `$raiz=${ps(raiz)};$podar=@(${lista});function W($d){Get-ChildItem -LiteralPath $d -Force -ErrorAction SilentlyContinue | ForEach-Object { if($_.PSIsContainer){ if($podar -notcontains $_.Name){ if(-not (Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue | Select-Object -First 1)){ $_.FullName } else { W $_.FullName } } } elseif($_.Extension -eq '.md'){ $_.FullName } } };W $raiz`
     const r = await powershell($, script).catch(() => undefined)
-    if (!r) return []
+    if (!r) return null
     salida = r.stdout
     const base = normalizar(raiz) + '/'
     return salida.split(/\r?\n/).filter(Boolean).map(normalizar).map(p => p.startsWith(base) ? p.slice(base.length) : p)
@@ -67,7 +68,7 @@ export async function listarMd($: EngineInterface, so: SO, raiz: string, podar: 
   podar.forEach((n, i) => argv.push(...(i ? ['-o'] : []), '-name', n))
   argv.push(')', '-prune', '-o', '-type', 'f', '-name', '*.md', '-print', '-o', '-type', 'd', '-empty', '-print')
   const r = await $.process.run(argv, { cwd: raiz, timeoutMs: 20000 }).catch(() => undefined)
-  if (!r) return []
+  if (!r) return null
   return r.stdout.split('\n').filter(l => l && l !== '.').map(p => p.replace(/^\.\//, ''))
     .map(p => (p.endsWith('.md') ? p : `${p}/`)).sort((a, b) => a.localeCompare(b, 'es'))
 }

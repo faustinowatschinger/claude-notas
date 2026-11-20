@@ -15,9 +15,10 @@ export type Rutas = { notas: string; versiones: string; papelera: string; planti
 export type Hallazgo = { ruta: string; linea: number; texto: string }
 export type Contenido = { q: string; hits: Hallazgo[] }
 export type Vinculos = { archivo: string; salientes: string[]; entrantes: string[] }
+export type EstadoIndice = { fase: 'indexando' | 'listo' | 'error'; detalle?: string }
 
 declare module 'claude-code' {
   interface PluginState {
-    notas: { vista: Shaped<Vista>; aviso: Shaped<string>; raiz: Shaped<string>; rutas: Shaped<Rutas>; contenido: Shaped<Contenido>; vinculos: Shaped<Vinculos>; edicion: Shaped<Edicion>; respaldo: Shaped<number>; indice: Shaped<string[]> }
+    notas: { vista: Shaped<Vista>; aviso: Shaped<string>; raiz: Shaped<string>; rutas: Shaped<Rutas>; contenido: Shaped<Contenido>; vinculos: Shaped<Vinculos>; edicion: Shaped<Edicion>; respaldo: Shaped<number>; indice: Shaped<string[]>; estadoIndice: Shaped<EstadoIndice> }
   }
 }

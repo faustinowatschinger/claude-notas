@@ -92,21 +92,48 @@ export function moverMes(am: string, d: number) {
 
 export const nombreMes = (am: string) => `${MESES[Number(am.slice(5)) - 1]} ${am.slice(0, 4)}`
 
+// La carpeta del chat. La app de escritorio arranca cada chat nuevo en una carpeta temporal
+// y después lo pasa a la del proyecto, así que no alcanza con la de session.start.
+async function carpetaSesion($: EngineInterface) {
+  for (const pedir of [() => $.session.root(), () => $.session.cwd()]) {
+    try {
+      const c = await pedir()
+      if (c) return c
+    } catch {
+      // sigue con la siguiente
+    }
+  }
+  return ''
+}
+
+// Si el chat pasó a otra carpeta, la carpeta de los días relativa la sigue.
+async function seguirCarpeta($: EngineInterface, carpeta: string, absoluta: boolean) {
+  if (absoluta) return
+  const cwd = (await carpetaSesion($)).replace(/\\/g, '/').replace(/\/+$/, '')
+  const nuevo = `${cwd}/${carpeta}`
+  if (!cwd || nuevo === (await read($, dir))) return
+  await update($, dir, () => nuevo)
+  await update($, doc, () => ({ fecha: '', texto: '', mtimeMs: 0 }))
+}
+
 export const register: Register = (on, options) => {
+  // Rutas con «/» en todos los sistemas; «C:\…» o «/…» son absolutas.
+  const normal = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
+  const carpeta = normal(String(options.carpetaDias ?? 'dias'))
+  const absoluta = /^([A-Za-z]:\/|\/)/.test(carpeta)
+
   on('session.start', async ($, e, next) => {
-    // Rutas con «/» en todos los sistemas; «C:\…» o «/…» son absolutas.
-    const normal = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
-    const carpeta = normal(String(options.carpetaDias ?? 'dias'))
-    const absoluta = /^([A-Za-z]:\/|\/)/.test(carpeta)
     await update($, dir, () => (absoluta ? carpeta : `${normal(e.cwd)}/${carpeta}`))
+    await seguirCarpeta($, carpeta, absoluta)
     await $.command.register({ name: 'agenda', description: 'Abrir el panel con la agenda del día' })
     await cargar($)
-    $.clock.every(3000, () => cargar($))
+    $.clock.every(3000, async () => { await seguirCarpeta($, carpeta, absoluta); await cargar($) })
     void $.ui.open({ id: PANE, title: 'Día' })
     return next(e)
   })
 
   on('command.run', { command: 'agenda' }, async $ => {
+    await seguirCarpeta($, carpeta, absoluta)
     await cargar($)
     await $.ui.open({ id: PANE, title: 'Día' })
     return { text: 'Panel del día abierto.' }

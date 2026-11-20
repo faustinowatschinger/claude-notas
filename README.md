@@ -1,8 +1,8 @@
 # claude-notas
 
-Tus notas y tu agenda adentro de Claude Code, sin salir a Obsidian ni a Notion.
+Las apps que usás todos los días, adentro de Claude Code. Mis notas y mis archivos estaban en Obsidian y mi lista de tareas en Notion; le pedí a Claude un mod para cada una y los armó él, sin que yo escribiera una línea de código.
 
-Son dos mods (plugins con panel propio) para la app de escritorio de Claude Code:
+Son dos mods (plugins con panel propio) para la app de escritorio de Claude Code. Trabajan sobre los mismos `.md` que lee y edita Claude: vos y Claude trabajan sobre lo mismo.
 
 | Mod | Comando | Qué hace |
 |---|---|---|
@@ -14,6 +14,7 @@ Guía paso a paso con capturas del flujo: [`guia-instalacion.pdf`](guia-instalac
 ## Qué necesitás
 
 - **La app de escritorio de Claude Code** (la pestaña Code), versión 2.1.328 o más nueva, en **Mac, Windows o Linux**.
+- **Un plan pago de Claude:** Claude Code no viene en el gratis. El Pro, de USD 20 por mes, alcanza.
 - En **Linux**, para copiar y pegar: `wl-clipboard` (Wayland) o `xclip`. En Mac y Windows no hace falta nada.
 
 Cada sistema usa lo suyo: en Mac, `pbcopy`/`pbpaste` y la Papelera; en Windows, PowerShell y la Papelera de reciclaje; en Linux, `wl-copy`/`xclip` y `gio trash`. **Probado en Mac.** Windows y Linux están cubiertos por tests simulados, todavía sin probar en una computadora real: si algo falla, abrí un issue. Los paneles también se ven en la terminal en pantalla completa, pero el editor se probó en la app de escritorio. En la extensión de VS Code no se ven paneles.
@@ -64,6 +65,7 @@ Se cambian con `/plugin configure notas@claude-notas` y `/plugin configure agend
 - Un mes arriba: los días con archivo en color. Tocás un día y ves su agenda.
 - Las casillas `- [ ]` del día se tildan con un clic y se guardan en el archivo.
 - Si las líneas empiezan con una hora en negrita (`- [ ] **10:00–12:00** Llamadas`), la arma como agenda y destaca el bloque que toca ahora.
+- La lista se la podés pedir a Claude: «Armame la agenda de hoy en `dias/`, un bloque por línea, con la hora en negrita y casillas».
 
 ## Cuidados que tiene
 
@@ -78,6 +80,12 @@ Se cambian con `/plugin configure notas@claude-notas` y `/plugin configure agend
 - No hay deshacer ni doble clic para seleccionar palabra.
 - El editor abre archivos de hasta 90.000 caracteres.
 - La corrección del clic (`CORRIMIENTO` en `notas/hooks/editor.tsx`) se midió en una Mac. Si en tu computadora el clic cae corrido, ese es el número a tocar.
+
+## Armá el tuyo
+
+Claude Code ya sabe armar mods. Contale en un chat qué querés ver al costado (por ejemplo, «armame un mod con un panel que muestre mis pendientes y me deje tildarlos»): lo escribe, lo prueba y la app te pregunta si querés activar los mods de esa sesión. Los cambios se los pedís hablando y se recargan al terminar cada respuesta.
+
+Los mods no corren aislados: leen y escriben archivos y corren comandos con tus permisos. Instalá los que puedas leer.
 
 ## Actualizar
 
