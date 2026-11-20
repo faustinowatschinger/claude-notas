@@ -1,0 +1,24 @@
+{
+  "name": "notas",
+  "version": "1.0.0",
+  "description": "Panel /notas: explorador de .md estilo VS Code, editor en el lugar con menú «/», tablas, [[enlaces]] con backlinks, búsqueda en el texto, propiedades, tags, plantillas y nota rápida.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "carpetaNotas": {
+      "type": "string",
+      "title": "Carpeta de las notas rápidas",
+      "description": "Donde se guarda cada nota rápida. Relativa al proyecto o absoluta.",
+      "default": "notas"
+    },
+    "carpetaPlantillas": {
+      "type": "string",
+      "title": "Carpeta de plantillas",
+      "description": "Archivos .md que «+ Nuevo» ofrece como plantilla. Usan {{fecha}}, {{hora}} y {{titulo}}. Relativa al proyecto o absoluta.",
+      "default": "plantillas"
+    }
+  },
+  "author": {
+    "name": "Faustino Watschinger"
+  },
+  "license": "MIT"
+}

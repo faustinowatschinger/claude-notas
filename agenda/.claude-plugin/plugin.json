@@ -1,0 +1,18 @@
+{
+  "name": "agenda",
+  "version": "1.0.0",
+  "description": "Panel /agenda: calendario del mes y las casillas del día (un AAAA-MM-DD.md por día), tildables con un clic.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "carpetaDias": {
+      "type": "string",
+      "title": "Carpeta de los días",
+      "description": "Carpeta con un archivo AAAA-MM-DD.md por día. Relativa al proyecto o absoluta.",
+      "default": "dias"
+    }
+  },
+  "author": {
+    "name": "Faustino Watschinger"
+  },
+  "license": "MIT"
+}

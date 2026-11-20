@@ -1,0 +1,16 @@
+{
+  "name": "claude-notas",
+  "owner": { "name": "Faustino Watschinger" },
+  "plugins": [
+    {
+      "name": "notas",
+      "source": "./notas",
+      "description": "Panel /notas: explorador de .md estilo VS Code, editor en el lugar con menú «/», tablas, [[enlaces]] con backlinks, búsqueda en el texto, propiedades, tags, plantillas y nota rápida."
+    },
+    {
+      "name": "agenda",
+      "source": "./agenda",
+      "description": "Panel /agenda: calendario del mes y las casillas del día, tildables con un clic."
+    }
+  ]
+}
