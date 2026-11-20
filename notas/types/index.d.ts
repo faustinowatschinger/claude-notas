@@ -11,7 +11,7 @@ export type Vista = {
 
 export type Edicion = { archivo: string; texto: string; version: number; inicio?: number; pegado?: { n: number; texto: string } }
 
-export type Rutas = { notas: string; versiones: string; papelera: string; plantillas: string }
+export type Rutas = { notas: string; versiones: string; papelera: string; plantillas: string; so: 'macos' | 'windows' | 'linux'; home: string }
 export type Hallazgo = { ruta: string; linea: number; texto: string }
 export type Contenido = { q: string; hits: Hallazgo[] }
 export type Vinculos = { archivo: string; salientes: string[]; entrantes: string[] }

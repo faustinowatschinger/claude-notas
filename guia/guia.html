@@ -98,7 +98,7 @@
   <div class="bar"><span><b>FAUS/OPERADOR</b> · <span class="rec">●</span> REC</span><span>INSTALAR</span></div>
   <h2><span class="n">02</span>Lo que necesitás</h2>
   <div class="grid2" style="margin-bottom:9mm">
-    <div class="card"><h3>Una Mac</h3><p>Copiar y pegar usan <code>pbcopy</code> y <code>pbpaste</code>, que son del Mac.</p></div>
+    <div class="card"><h3>Mac, Windows o Linux</h3><p>Cada sistema usa lo suyo para copiar, pegar y la Papelera. En Linux: <code>wl-clipboard</code> o <code>xclip</code>.</p></div>
     <div class="card"><h3>Claude Code de escritorio</h3><p>La pestaña <b>Code</b> de la app de Claude, versión 2.1.328 o más nueva.</p></div>
   </div>
   <h2><span class="n">03</span>Instalalo en 3 comandos</h2>
@@ -149,7 +149,7 @@
     <tr><td>Editor</td><td class="k">/</td><td>Menú de bloques: títulos, listas, casillas, tablas, código</td></tr>
     <tr><td>Editor</td><td class="k">[[</td><td>Lista de notas para enlazar</td></tr>
     <tr><td>Tablas</td><td class="k">Tab · Enter · /</td><td>Celda siguiente · fila nueva · columnas, filas o eliminar</td></tr>
-    <tr><td>Editor</td><td class="k">⌘A ⌘C ⌘X ⌘V</td><td>Seleccionar todo, copiar, cortar, pegar</td></tr>
+    <tr><td>Editor</td><td class="k">⌘/Ctrl + A C X V</td><td>Seleccionar todo, copiar, cortar, pegar</td></tr>
     <tr><td>Editor</td><td class="k">Shift + flechas</td><td>Seleccionar; también arrastrando el mouse</td></tr>
     <tr><td>Editor</td><td class="k">Enter en lista</td><td>Sigue la lista (<code>- </code>, <code>- [ ] </code>, <code>1. </code>); en una vacía la corta</td></tr>
     <tr><td>Agenda</td><td class="k">clic en casilla</td><td>La tilda y la guarda en el archivo del día</td></tr>
@@ -166,7 +166,7 @@
   <ul class="big-list">
     <li>Nunca guarda un archivo con contenido como vacío.</li>
     <li>Antes de la primera escritura de cada edición copia el original a <code>~/.claude/notas-versiones/</code>.</li>
-    <li>Eliminar manda a la Papelera del Mac: se recupera desde el Finder.</li>
+    <li>Eliminar manda a la Papelera del sistema: se recupera desde ahí.</li>
   </ul>
   <h2 style="margin-top:9mm"><span class="n">07</span>Lo que todavía no hace</h2>
   <ul class="big-list">
@@ -174,7 +174,7 @@
     <li>En la app de escritorio, un clic en un link dentro del texto lo abre la app: los <code>[[enlaces]]</code> se navegan con los botones del pie.</li>
     <li>No hay deshacer ni doble clic para seleccionar una palabra.</li>
     <li>El editor abre archivos de hasta 90.000 caracteres.</li>
-    <li>Si en tu Mac el clic cae corrido una letra, el número a tocar es <code>CORRIMIENTO</code> en <code>notas/hooks/editor.tsx</code>.</li>
+    <li>Probado en Mac; en Windows y Linux, con tests simulados. Si el clic cae corrido una letra, el número a tocar es <code>CORRIMIENTO</code> en <code>notas/hooks/editor.tsx</code>.</li>
   </ul>
   <h2 style="margin-top:9mm"><span class="n">08</span>Actualizar</h2>
   <div class="cmd"><span class="p">›</span>/plugin marketplace update claude-notas</div>

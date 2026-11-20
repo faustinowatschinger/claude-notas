@@ -1,6 +1,6 @@
 {
   "name": "notas",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Panel /notas: explorador de .md estilo VS Code, editor en el lugar con menú «/», tablas, [[enlaces]] con backlinks, búsqueda en el texto, propiedades, tags, plantillas y nota rápida.",
   "types": "./types/index.d.ts",
   "userConfig": {

@@ -1,7 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Contenido, Edicion, Hallazgo, Rutas, Vinculos, Vista } from '../types'
+import type { Contenido, Edicion, Rutas, Vinculos, Vista } from '../types'
+import { aLaPapelera, buscarTexto, carpetaUsuario, crearCarpeta, escribirPortapapeles, esAbsoluta, leerPortapapeles, listarMd, normalizar, plataforma } from './sistema'
 
 const PANE = 'notas'
 const PODAR = ['node_modules', '.git', '.venv', '.next', 'dist', 'build', 'out', 'vendor', 'Pods', '__pycache__', '.pytest_cache', 'coverage', 'crudos', 'Videos', 'imagenes-temporales', 'public', '.obsidian']
@@ -11,7 +12,7 @@ const edicion = atom({ plugin: 'notas', key: 'edicion' } as const, { archivo: ''
 const respaldo = atom({ plugin: 'notas', key: 'respaldo' } as const, 0, { shape: 'respaldo-1' })
 const aviso = atom({ plugin: 'notas', key: 'aviso' } as const, '', { shape: 'aviso-1' })
 // Dónde van las notas, las copias previas y la Papelera: se arman al abrir la sesión.
-const rutasA = atom({ plugin: 'notas', key: 'rutas' } as const, { notas: '', versiones: '', papelera: '', plantillas: '' } as Rutas, { shape: 'rutas-2' })
+const rutasA = atom({ plugin: 'notas', key: 'rutas' } as const, { notas: '', versiones: '', papelera: '', plantillas: '', so: 'macos', home: '' } as Rutas, { shape: 'rutas-3' })
 const raiz = atom({ plugin: 'notas', key: 'raiz' } as const, '', { shape: 'raiz-1' })
 const contenidoA = atom({ plugin: 'notas', key: 'contenido' } as const, { q: '', hits: [] } as Contenido, { shape: 'contenido-1' })
 const vinculosA = atom({ plugin: 'notas', key: 'vinculos' } as const, { archivo: '', salientes: [], entrantes: [] } as Vinculos, { shape: 'vinculos-1' })
@@ -162,35 +163,21 @@ export const nombreNota = (ms: number, texto: string) => {
 }
 
 async function indexar($: EngineInterface) {
-  const r = await read($, raiz)
-  const argv = ['find', '.', '(']
-  PODAR.forEach((n, i) => argv.push(...(i ? ['-o'] : []), '-name', n))
-  argv.push(')', '-prune', '-o', '-type', 'f', '-name', '*.md', '-print', '-o', '-type', 'd', '-empty', '-print')
-  try {
-    const { stdout } = await $.process.run(argv, { cwd: r, timeoutMs: 20000 })
-    // Los .md, y las carpetas vacías con «/» al final (las recién creadas se ven aunque no tengan nada).
-    const lista = stdout.split('\n').filter(l => l && l !== '.').map(p => p.replace(/^\.\//, '')).map(p => (p.endsWith('.md') ? p : `${p}/`)).sort((a, b) => a.localeCompare(b, 'es'))
-    await update($, indiceA, () => lista)
-  } catch {
-    // sin índice: la lista queda como estaba
-  }
+  const { so } = await read($, rutasA)
+  const lista = await listarMd($, so, await read($, raiz), PODAR)
+  if (lista.length > 0) await update($, indiceA, () => lista)
 }
 
-// grep del sistema sobre los .md del proyecto, salteando lo pesado.
-async function grep($: EngineInterface, args: string[]) {
-  const r = await $.process.run(['/usr/bin/grep', '-rIn', '--include=*.md', ...PODAR.map(d => `--exclude-dir=${d}`), ...args, '.'], { cwd: await read($, raiz), timeoutMs: 20000, env: UTF8 }).catch(() => undefined)
-  if (!r) return [] as Hallazgo[]
-  return r.stdout.split('\n').filter(Boolean).flatMap(l => {
-    const m = /^\.\/(.+?):(\d+):(.*)$/.exec(l)
-    if (m) return [{ ruta: m[1], linea: Number(m[2]) - 1, texto: m[3] }]
-    return l.startsWith('./') ? [{ ruta: l.slice(2), linea: 0, texto: '' }] : []
-  })
+// Busca en los .md con el comando que corresponde al sistema.
+async function grep($: EngineInterface, q: string, soloArchivos: boolean) {
+  const { so } = await read($, rutasA)
+  return buscarTexto($, so, await read($, raiz), await read($, indiceA), PODAR, q, soloArchivos)
 }
 
 async function buscarContenido($: EngineInterface, q: string) {
   const t = q.trim()
   if (t.length < 2) { await update($, contenidoA, () => ({ q: t, hits: [] })); return }
-  const hits = (await grep($, ['-i', '-F', '-m', '3', '-e', t])).slice(0, 60)
+  const hits = (await grep($, t, false)).slice(0, 60)
   await update($, contenidoA, () => ({ q: t, hits }))
 }
 
@@ -200,13 +187,13 @@ async function cargarVinculos($: EngineInterface, archivo: string) {
   const indice = await read($, indiceA)
   const salientes = enlaces(texto).map(n => resolverEnlace(indice, n) ?? `?${n}`)
   const base = (archivo.split('/').pop() ?? '').replace(/\.md$/, '')
-  const rel = archivo.startsWith('/') ? archivo.replace(`${await read($, raiz)}/`, '') : archivo
-  const entrantes = base ? [...new Set((await grep($, ['-l', '-i', '-F', '-e', `[[${base}`])).map(h => h.ruta))].filter(r => r !== rel) : []
+  const rel = esAbsoluta(archivo) ? archivo.replace(`${await read($, raiz)}/`, '') : archivo
+  const entrantes = base ? [...new Set((await grep($, `[[${base}`, true)).map(h => h.ruta))].filter(r => r !== rel) : []
   await update($, vinculosA, () => ({ archivo, salientes, entrantes }))
 }
 
 async function absoluto($: EngineInterface, rel: string) {
-  return rel.startsWith('/') ? rel : `${await read($, raiz)}/${rel}`
+  return esAbsoluta(rel) ? rel : `${await read($, raiz)}/${rel}`
 }
 
 async function anotar($: EngineInterface, texto: string) {
@@ -239,9 +226,8 @@ async function editar($: EngineInterface, linea = 0) {
 
 // Cada cambio del editor llega acá. Nunca vacía un archivo con contenido,
 // y antes de la primera escritura de cada apertura copia el original a VERSIONES.
-// Pegar: macOS da el portapapeles con pbpaste; el editor lo inserta donde está el cursor.
-// pbpaste y pbcopy sin idioma configurado usan la codificación vieja de Mac y rompen los acentos.
-const UTF8 = { LANG: 'en_US.UTF-8', LC_ALL: 'en_US.UTF-8', LC_CTYPE: 'UTF-8' }
+// Pegar: el portapapeles se lee con el comando de cada sistema (ver sistema.ts) y el editor
+// lo inserta donde está el cursor.
 
 // Lo que Google Docs y otras apps meten al copiar: salto de línea propio, espacios duros,
 // marcas de ancho cero y caracteres de control.
@@ -256,12 +242,12 @@ export function limpiarPegado(t: string) {
 }
 
 async function pegar($: EngineInterface) {
-  const r = await $.process.run(['/usr/bin/pbpaste'], { timeoutMs: 5000, env: UTF8 }).catch(() => undefined)
-  if (!r || r.exitCode !== 0) {
+  const crudo = await leerPortapapeles($, (await read($, rutasA)).so)
+  if (crudo === undefined) {
     await update($, aviso, () => 'No pude leer el portapapeles.')
     return undefined
   }
-  const texto = limpiarPegado(r.stdout).slice(0, MAXIMO)
+  const texto = limpiarPegado(crudo).slice(0, MAXIMO)
   if (texto === '') return undefined
   // Un número que sube en cada pegado: el editor aplica cada uno una sola vez.
   let n = 0
@@ -297,8 +283,7 @@ async function crear($: EngineInterface, nombre: string, carpeta: string, tipo: 
   const rel = (carpeta ? `${carpeta}/` : '') + (tipo === 'archivo' ? `${limpio}.md` : limpio)
   const abs = await absoluto($, rel)
   if (tipo === 'carpeta') {
-    const r = await $.process.run(['/bin/mkdir', '-p', abs]).catch(() => undefined)
-    if (!r || r.exitCode !== 0) { await update($, aviso, () => `No pude crear la carpeta ${rel}.`); return }
+    if (!(await crearCarpeta($, (await read($, rutasA)).so, abs))) { await update($, aviso, () => `No pude crear la carpeta ${rel}.`); return }
     await update($, vista, x => ({ ...x, creandoEn: undefined, abiertas: [...new Set([...x.abiertas, ...(carpeta ? [carpeta] : []), rel])] }))
     await update($, aviso, () => `Carpeta creada: ${rel}`)
     await indexar($)
@@ -320,15 +305,15 @@ async function crear($: EngineInterface, nombre: string, carpeta: string, tipo: 
   await editar($, Math.max(0, texto.split('\n').length - 1))
 }
 
-// Eliminar = mover a la Papelera de macOS: se recupera desde el Finder.
+// Eliminar = mandar a la Papelera del sistema: se recupera desde ahí.
 async function eliminar($: EngineInterface, rel: string) {
   const abs = await absoluto($, rel)
   const nombre = rel.split('/').pop()!
   const ms = await $.clock.now()
-  const destino = `${(await read($, rutasA)).papelera}/${nombre.replace(/\.md$/, '')} ${ms}.md`
-  const r = await $.process.run(['mv', '-n', abs, destino])
-  if (r.exitCode !== 0) {
-    await update($, aviso, () => `No se pudo eliminar: ${r.stderr.trim()}`)
+  const { so, home } = await read($, rutasA)
+  const error = await aLaPapelera($, so, abs, home, ms)
+  if (error) {
+    await update($, aviso, () => `No se pudo eliminar: ${error}`)
     return
   }
   await update($, aviso, () => `«${nombre}» está en la Papelera.`)
@@ -347,14 +332,18 @@ async function alternarCarpeta($: EngineInterface, c: string) {
 
 export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
-    await update($, raiz, () => e.cwd)
-    const home = (await $.process.run(['/usr/bin/printenv', 'HOME']).catch(() => undefined))?.stdout.trim() || ''
-    const carpeta = String(options.carpetaNotas ?? 'notas').replace(/\/+$/, '')
+    const cwd = normalizar(e.cwd)
+    await update($, raiz, () => cwd)
+    const so = await plataforma($)
+    const home = await carpetaUsuario($)
+    const ruta = (v: unknown, def: string) => { const c = normalizar(String(v ?? def)); return esAbsoluta(c) ? c : `${cwd}/${c}` }
     await update($, rutasA, () => ({
-      notas: carpeta.startsWith('/') ? carpeta : `${e.cwd}/${carpeta}`,
-      versiones: home ? `${home}/.claude/notas-versiones` : `${e.cwd}/.notas-versiones`,
-      papelera: home ? `${home}/.Trash` : `${e.cwd}/.papelera`,
-      plantillas: (() => { const c = String(options.carpetaPlantillas ?? 'plantillas').replace(/\/+$/, ''); return c.startsWith('/') ? c : `${e.cwd}/${c}` })(),
+      so,
+      home,
+      notas: ruta(options.carpetaNotas, 'notas'),
+      versiones: home ? `${home}/.claude/notas-versiones` : `${cwd}/.notas-versiones`,
+      papelera: '',
+      plantillas: ruta(options.carpetaPlantillas, 'plantillas'),
     }))
     await $.command.register({ name: 'notas', description: 'Abrir el panel de notas y archivos .md del proyecto' })
     void indexar($)
@@ -374,7 +363,7 @@ export const register: Register = (on, options) => {
     const d = e.data as { tipo?: string; texto?: string; copiar?: string; pegar?: boolean; enlace?: string }
     const legacyCopiar = d?.tipo === 'copiar' ? d.texto : undefined
     const copiar = typeof d?.copiar === 'string' ? d.copiar : legacyCopiar
-    if (typeof copiar === 'string') await $.process.run(['/usr/bin/pbcopy'], { stdin: copiar, timeoutMs: 5000, env: UTF8 }).catch(() => undefined)
+    if (typeof copiar === 'string') await escribirPortapapeles($, (await read($, rutasA)).so, copiar)
     let estado: string | undefined
     if (d?.tipo !== 'copiar' && typeof d?.texto === 'string') estado = await guardarCambio($, d.texto)
     if (d?.pegar || d?.tipo === 'pegar') await pegar($)

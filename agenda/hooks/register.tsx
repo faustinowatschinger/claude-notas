@@ -94,8 +94,11 @@ export const nombreMes = (am: string) => `${MESES[Number(am.slice(5)) - 1]} ${am
 
 export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
-    const carpeta = String(options.carpetaDias ?? 'dias').replace(/\/+$/, '')
-    await update($, dir, () => (carpeta.startsWith('/') ? carpeta : `${e.cwd}/${carpeta}`))
+    // Rutas con «/» en todos los sistemas; «C:\…» o «/…» son absolutas.
+    const normal = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
+    const carpeta = normal(String(options.carpetaDias ?? 'dias'))
+    const absoluta = /^([A-Za-z]:\/|\/)/.test(carpeta)
+    await update($, dir, () => (absoluta ? carpeta : `${normal(e.cwd)}/${carpeta}`))
     await $.command.register({ name: 'agenda', description: 'Abrir el panel con la agenda del día' })
     await cargar($)
     $.clock.every(3000, () => cargar($))

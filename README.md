@@ -13,8 +13,10 @@ Guía paso a paso con capturas del flujo: [`guia-instalacion.pdf`](guia-instalac
 
 ## Qué necesitás
 
-- **Mac.** Pegar y copiar usan `pbpaste` y `pbcopy`.
-- **La app de escritorio de Claude Code** (la pestaña Code), versión 2.1.328 o más nueva. Los paneles también se ven en la terminal en pantalla completa, pero el editor se probó en la app de escritorio. En la extensión de VS Code no se ven paneles.
+- **La app de escritorio de Claude Code** (la pestaña Code), versión 2.1.328 o más nueva, en **Mac, Windows o Linux**.
+- En **Linux**, para copiar y pegar: `wl-clipboard` (Wayland) o `xclip`. En Mac y Windows no hace falta nada.
+
+Cada sistema usa lo suyo: en Mac, `pbcopy`/`pbpaste` y la Papelera; en Windows, PowerShell y la Papelera de reciclaje; en Linux, `wl-copy`/`xclip` y `gio trash`. **Probado en Mac.** Windows y Linux están cubiertos por tests simulados, todavía sin probar en una computadora real: si algo falla, abrí un issue. Los paneles también se ven en la terminal en pantalla completa, pero el editor se probó en la app de escritorio. En la extensión de VS Code no se ven paneles.
 
 ## Instalar
 
@@ -53,9 +55,9 @@ Se cambian con `/plugin configure notas@claude-notas` y `/plugin configure agend
 - **Explorador:** todos los `.md` del proyecto en árbol. En cada carpeta, al pasar el mouse, ＋📄 crea un archivo y ＋📁 una carpeta. El archivo nuevo abre directo en el editor.
 - **Buscador 🔍:** por nombre o ruta mientras escribís; con Enter busca también dentro del texto.
 - **Lectura:** el archivo con formato, las propiedades del encabezado YAML, las `#etiquetas`, un índice de títulos y, al pie, los enlaces que salen y las notas que lo enlazan. Al pasar el mouse por una sección aparece ✎ para editar ahí.
-- **Editor:** se escribe dentro del panel. Enter hace línea nueva y sigue las listas. «/» abre el menú de bloques (títulos, listas, casillas, tablas, código…). `[[` propone notas para enlazar. En las tablas, Tab pasa de celda y «/» agrega o quita columnas y filas. Selección con el mouse o Shift, Cmd+A/C/X/V. Se guarda solo.
+- **Editor:** se escribe dentro del panel. Enter hace línea nueva y sigue las listas. «/» abre el menú de bloques (títulos, listas, casillas, tablas, código…). `[[` propone notas para enlazar. En las tablas, Tab pasa de celda y «/» agrega o quita columnas y filas. Selección con el mouse o Shift, Cmd/Ctrl + A/C/X/V. Se guarda solo.
 - **Nota rápida:** escribís, «Guardar», y queda como archivo en `carpetaNotas`.
-- **🗑 Eliminar:** pide confirmación y manda el archivo a la Papelera del Mac.
+- **🗑 Eliminar:** pide confirmación y manda el archivo a la Papelera del sistema.
 
 ## Qué hace `/agenda`
 
@@ -75,7 +77,7 @@ Se cambian con `/plugin configure notas@claude-notas` y `/plugin configure agend
 - En la app de escritorio el clic en un link dentro del texto con formato lo maneja la app, por eso los `[[enlaces]]` se navegan con los botones del pie.
 - No hay deshacer ni doble clic para seleccionar palabra.
 - El editor abre archivos de hasta 90.000 caracteres.
-- La corrección del clic (`CORRIMIENTO` en `notas/hooks/editor.tsx`) se midió en una Mac. Si en la tuya el clic cae corrido, ese es el número a tocar.
+- La corrección del clic (`CORRIMIENTO` en `notas/hooks/editor.tsx`) se midió en una Mac. Si en tu computadora el clic cae corrido, ese es el número a tocar.
 
 ## Actualizar
 

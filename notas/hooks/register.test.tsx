@@ -9,6 +9,7 @@ const PANE = {
   props: { title: 'Notas', isFocused: false, bodyColumns: 50, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
 } as const
 
+const sistemaSimulado = { os: undefined as string | undefined }
 const copiados: string[] = []
 const mkdirs: string[] = []
 
@@ -16,6 +17,7 @@ function montarFs(on: any, fs: Map<string, string>, movidos: string[][]) {
   on('clock.now', () => ({ value: Date.UTC(2026, 10, 20, 12, 30) }))
   on('clock.every', () => ({ value: undefined }))
   on('clock.after', () => ({ value: undefined }))
+  on('env.get', (_: any, e: any) => ({ value: e.name === 'HOME' ? '/home/test' : e.name === 'OS' ? sistemaSimulado.os : undefined }))
   on('command.register', () => ({ value: { command: 'notas' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('session.start', (_: any, e: any) => ({ cwd: e.cwd }))
@@ -327,5 +329,65 @@ test('enlaces, búsqueda en el texto, plantillas y [[ en el editor', async ($, o
   for (const k of ['[', '[', 'b']) await ui.key({ key: k })
   await ui.key({ key: 'return' })
   expect(fs.get(`${R}/reuniones/Reunión Juan.md`)).toContain('[[b]]')
+  await ui.unmount()
+})
+
+test('en Windows usa PowerShell para listar, buscar, carpetas, portapapeles y Papelera', async ($, on) => {
+  const W = 'C:/proy'
+  const fs = new Map<string, string>([[`${W}/a.md`, '# A\nhola mundo [[b]]'], [`${W}/sub/b.md`, '# B']])
+  const scripts: string[] = []
+  const ok = (stdout = '') => ({ value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } })
+  on('clock.now', () => ({ value: Date.UTC(2026, 10, 20, 12, 30) }))
+  on('clock.every', () => ({ value: undefined }))
+  on('clock.after', () => ({ value: undefined }))
+  on('env.get', (_: any, e: any) => ({ value: e.name === 'OS' ? 'Windows_NT' : e.name === 'USERPROFILE' ? 'C:\\Users\\ana' : undefined }))
+  on('command.register', () => ({ value: { command: 'notas' } }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('session.start', (_: any, e: any) => ({ cwd: e.cwd }))
+  on('fs.exists', (_: any, e: any) => ({ value: fs.has(e.path) || [...fs.keys()].some(k => k.startsWith(e.path + '/')) }))
+  on('fs.read', (_: any, e: any) => ({ value: fs.get(e.path) ?? '' }))
+  on('fs.write', (_: any, e: any) => { fs.delete(e.path); fs.set(e.path, e.text); return { value: undefined } })
+  on('fs.list', () => ({ value: [] }))
+  on('process.run', (_: any, e: any) => {
+    expect(e.argv[0]).toBe('powershell')
+    const sc: string = e.argv[e.argv.length - 1]
+    scripts.push(sc)
+    if (sc.includes('function W(')) return ok([...fs.keys()].map(k => k.replace(/\//g, '\\')).join('\r\n'))
+    if (sc.includes('Select-String')) {
+      const q = /\$q='([^']*)'/.exec(sc)![1]
+      const files: string[] = e.init.stdin.split('\n')
+      return ok(files.flatMap(f => (fs.get(`${W}/${f}`) ?? '').split('\n').map((l, i) => [l, i] as const).filter(([l]) => l.toLowerCase().includes(q.toLowerCase())).map(([l, i]) => `${W.replace(/\//g, '\\')}\\${f.replace(/\//g, '\\')}:${i + 1}:${l}`)).join('\r\n'))
+    }
+    if (sc.includes('Get-Clipboard')) return ok('pegado de Windows\r\n')
+    return ok()
+  })
+  await $.session.start({ cwd: 'C:\\proy', surface: 'desktop', isInteractive: true })
+  await $.command.run({ command: 'notas', args: '' })
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  // lista y buscador
+  expect(await ui.find({ type: 'Button', key: 'f-a.md' })).toBeTruthy()
+  await ui.input({ key: 'buscar', text: 'mundo', kind: 'submit' })
+  expect(await ui.find({ type: 'Text', text: /hola mundo/ })).toBeTruthy()
+  await ui.input({ key: 'buscar', text: '', kind: 'change' })
+  // carpeta nueva
+  await ui.press({ key: 'nueva-carpeta-raiz' })
+  await ui.input({ key: 'nuevo', text: 'ideas', kind: 'submit' })
+  expect(scripts.some(sc => sc.includes("New-Item -ItemType Directory -Force -Path 'C:/proy/ideas'"))).toBe(true)
+  // pegar y copiar en el editor
+  await ui.press({ key: 'f-a.md' })
+  await ui.press({ key: 'editar' })
+  await ui.key({ key: 'v', ctrl: true })
+  expect(scripts.filter(sc => sc.includes('Get-Clipboard')).length).toBe(1)
+  // en esta Mac el simulador toma «C:/…» como ruta relativa al escribir: se busca por el final
+  const escrito = [...fs.entries()].filter(([k]) => k.endsWith('C:/proy/a.md')).pop()![1]
+  expect(escrito).toContain('pegado de Windows')
+  await ui.key({ key: 'a', ctrl: true })
+  await ui.key({ key: 'c', ctrl: true })
+  expect(scripts.some(sc => sc.includes('Set-Clipboard'))).toBe(true)
+  await ui.press({ key: 'listo' })
+  // eliminar va a la Papelera de reciclaje
+  await ui.press({ key: 'borrar' })
+  await ui.press({ key: 'si-borrar' })
+  expect(scripts.some(sc => sc.includes('SendToRecycleBin') && sc.includes("'C:/proy/a.md'"))).toBe(true)
   await ui.unmount()
 })

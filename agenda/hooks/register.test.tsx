@@ -91,3 +91,17 @@ test('el calendario abre otro día', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: 'Viernes 20 de noviembre' })).toBeTruthy()
   await ui.unmount()
 })
+
+test('la carpeta de días acepta rutas de Windows', async ($, on) => {
+  const leidas: string[] = []
+  on('command.register', () => ({ value: { command: 'agenda' } }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('clock.now', () => ({ value: Date.UTC(2026, 10, 20, 12) }))
+  on('clock.every', () => ({ value: undefined }))
+  on('fs.stat', (_, e) => { leidas.push(e.path); return { value: { kind: 'file', size: 1, mtimeMs: 1, isLink: false } } })
+  on('fs.read', () => ({ value: '- [ ] algo' }))
+  await $.session.start({ cwd: 'C:\\Users\\ana\\proyecto', surface: 'desktop', isInteractive: true })
+  // en esta Mac el simulador antepone la carpeta actual a «C:/…»: se compara el final
+  expect(leidas[0].endsWith('C:/Users/ana/proyecto/dias/2026-11-20.md')).toBe(true)
+})
